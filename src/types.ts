@@ -1,5 +1,3 @@
-// Core data types for Viral Flow
-
 export interface Topic {
   id: string;
   title: string;
@@ -66,4 +64,42 @@ export interface AgentBrain {
   };
   performance_history: PerformanceMetric[];
   last_updated: string;
+}
+
+export interface DiscoverOptions {
+  sources: ('youtube' | 'reddit' | 'custom' | string)[];
+  keywords?: string[];
+  icp_filter?: string;
+  max_results?: number;
+}
+
+export interface AngleGeneratorOptions {
+  topic: Topic;
+  formats?: ('longform' | 'shortform' | 'linkedin')[];
+  num_angles?: number;
+}
+
+export interface HookGeneratorOptions {
+  topic: Topic;
+  angle: Angle;
+  num_hooks?: number;
+}
+
+export interface ScriptBuilderOptions {
+  topic: Topic;
+  angle: Angle;
+  hook: Hook;
+  format: 'longform' | 'shortform' | 'linkedin';
+  duration?: number;
+}
+
+export interface AnalyzeOptions {
+  script_id: string;
+  metrics: {
+    platform: string;
+    views: number;
+    engagement_rate: number;
+    click_through_rate?: number;
+    conversion_rate?: number;
+  };
 }

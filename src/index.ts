@@ -3,9 +3,18 @@
 export * from './types';
 export * from './utils';
 
-// Placeholder for Phase 1 exports
-// export { discover } from './discover';
-// export { generateAngles } from './angle';
-// export { generateHooks } from './hook';
-// export { buildScript } from './script';
-// export { recordPerformance, analyzePatterns } from './analyze';
+// Discover workflow
+export { discover, registerSource, DiscoverSource } from './discover';
+export { YouTubeSource, RedditSource, CustomSource } from './discover';
+
+// Angle workflow
+export { generateAngles, generateContrastPairs, buildAngleText } from './angle';
+
+// Hook workflow
+export { generateHooks, generateHooksForPatterns, scoreHook, rankHooks } from './hook';
+
+// Script workflow
+export { buildScript, SCRIPT_TEMPLATES, ESTIMATED_DURATIONS } from './script';
+
+// Analyze workflow
+export { recordPerformance, analyzePatterns } from './analyze';

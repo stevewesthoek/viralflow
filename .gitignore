@@ -8,6 +8,9 @@ yarn.lock
 dist/
 build/
 *.tsbuildinfo
+*.js
+*.js.map
+!jest.config.js
 
 # Test coverage
 coverage/

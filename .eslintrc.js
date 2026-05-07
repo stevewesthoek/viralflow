@@ -13,7 +13,7 @@ module.exports = {
     es2020: true,
     jest: true,
   },
-  ignorePatterns: ['dist', 'node_modules', '*.d.ts'],
+  ignorePatterns: ['dist', 'node_modules', '*.d.ts', 'tests/**/*.js', 'tests/**/*.js.map'],
   rules: {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
