@@ -5,6 +5,9 @@ import { RedditSource } from './reddit';
 import { TwitterSource } from './twitter';
 import { TikTokTrendsSource } from './tiktok-trends';
 import { CustomSource } from './custom';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Discovery source registry: extensible architecture for custom sources
 // Add your own discovery source by calling registerSource('my-source', sourceInstance)
@@ -15,6 +18,11 @@ const sources: Record<string, DiscoverSource> = {
   'tiktok-trends': new TikTokTrendsSource(),
   custom: new CustomSource(),
 };
+
+// Cache configuration
+const CACHE_DIR = path.join(process.env.HOME || '.', '.viral-flow', 'cache');
+const CACHE_TTL_MINUTES = parseInt(process.env.VIRAL_FLOW_CACHE_TTL_MINUTES || '60', 10);
+const CACHE_ENABLED = process.env.NODE_ENV !== 'test';
 
 /**
  * Register a custom discovery source.
@@ -79,7 +87,16 @@ export async function discover(options: DiscoverOptions): Promise<Topic[]> {
     throw new Error('At least one keyword must be specified');
   }
 
-  // Parallel discovery from multiple sources (YouTube + Reddit simultaneously)
+  // Check cache first (disabled in tests)
+  if (CACHE_ENABLED) {
+    const cacheKey = generateCacheKey({ requestedSources, keywords, icp_filter });
+    const cached = getFromCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  // Parallel discovery from multiple sources (YouTube + Reddit + Twitter + TikTok simultaneously)
   const results = await Promise.all(
     requestedSources.map(async (sourceName: string) => {
       const source = sources[sourceName];
@@ -118,7 +135,53 @@ export async function discover(options: DiscoverOptions): Promise<Topic[]> {
     .slice(0, max_results)
     .map((item) => item.topic);
 
+  // Cache the result (disabled in tests)
+  if (CACHE_ENABLED) {
+    const cacheKey = generateCacheKey({ requestedSources, keywords, icp_filter });
+    saveToCache(cacheKey, ranked);
+  }
+
   return ranked;
+}
+
+function generateCacheKey(opts: { requestedSources: string[]; keywords: string[]; icp_filter?: string }): string {
+  const key = JSON.stringify({ sources: opts.requestedSources.sort(), keywords: opts.keywords.sort(), icp: opts.icp_filter || '' });
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
+function getFromCache(key: string): Topic[] | null {
+  try {
+    if (!fs.existsSync(CACHE_DIR)) {
+      return null;
+    }
+    const filePath = path.join(CACHE_DIR, `discover-${key}.json`);
+    if (!fs.existsSync(filePath)) {
+      return null;
+    }
+    const stat = fs.statSync(filePath);
+    const ageMs = Date.now() - stat.mtimeMs;
+    const ttlMs = CACHE_TTL_MINUTES * 60 * 1000;
+    if (ageMs > ttlMs) {
+      fs.unlinkSync(filePath);
+      return null;
+    }
+    const data = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+function saveToCache(key: string, topics: Topic[]): void {
+  try {
+    if (!fs.existsSync(CACHE_DIR)) {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    }
+    const filePath = path.join(CACHE_DIR, `discover-${key}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(topics), 'utf-8');
+  } catch {
+    // Silent fail: cache is optional
+  }
 }
 
 /**

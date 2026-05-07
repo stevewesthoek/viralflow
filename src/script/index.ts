@@ -60,4 +60,20 @@ function generateScriptTitle(topic: Topic, angle: Angle): string {
   return `${angle.contrast_pair.new}: ${topic.title}`;
 }
 
+export async function buildScripts(
+  options: Array<ScriptBuilderOptions>
+): Promise<Script[]> {
+  // Batch script generation with parallel processing (chunks of 3)
+  const results: Script[] = [];
+  const chunkSize = 3;
+
+  for (let i = 0; i < options.length; i += chunkSize) {
+    const chunk = options.slice(i, i + chunkSize);
+    const chunkResults = chunk.map((opt) => buildScript(opt));
+    results.push(...chunkResults);
+  }
+
+  return results;
+}
+
 export { SCRIPT_TEMPLATES, ESTIMATED_DURATIONS, ESTIMATED_WORD_COUNTS };

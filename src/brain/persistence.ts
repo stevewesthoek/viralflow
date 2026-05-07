@@ -5,10 +5,16 @@ import { getCurrentTimestamp } from '../utils';
 
 /**
  * Brain persistence layer - save/load agent brain from JSON
+ * Includes dirty-flag write buffering to reduce I/O during batch operations
  */
 
 const DEFAULT_BRAIN_DIR = './.viral-brain';
 const DEFAULT_BRAIN_FILE = 'agent-brain.json';
+const WRITE_BUFFER_INTERVAL_MS = 30 * 1000; // Flush every 30 seconds
+
+// Write buffering state
+const writeBuffer: Map<string, AdvancedAgentBrain> = new Map();
+let flushTimer: NodeJS.Timeout | null = null;
 
 /**
  * Initialize brain directory if it doesn't exist
@@ -49,21 +55,40 @@ export function createNewBrain(
 }
 
 /**
- * Save agent brain to disk
+ * Save agent brain to disk (buffered write)
+ * Batches writes and flushes every 30 seconds to reduce I/O during batch operations
  */
 export function saveBrain(
   brain: AdvancedAgentBrain,
   brainDir: string = DEFAULT_BRAIN_DIR,
   filename: string = DEFAULT_BRAIN_FILE
 ): string {
-  initializeBrainDirectory(brainDir);
+  const key = `${brainDir}/${filename}`;
+  writeBuffer.set(key, brain);
 
-  const filepath = path.join(brainDir, filename);
-  const json = JSON.stringify(brain, null, 2);
+  if (!flushTimer) {
+    flushTimer = setTimeout(() => {
+      flushWriteBuffer();
+      flushTimer = null;
+    }, WRITE_BUFFER_INTERVAL_MS);
+  }
 
-  fs.writeFileSync(filepath, json, 'utf-8');
+  // Return the filepath for compatibility
+  return path.join(brainDir, filename);
+}
 
-  return filepath;
+/**
+ * Force flush all buffered writes to disk
+ */
+export function flushWriteBuffer(): void {
+  writeBuffer.forEach((brain, key) => {
+    const [brainDir, filename] = key.split('/');
+    initializeBrainDirectory(brainDir);
+    const filepath = path.join(brainDir, filename);
+    const json = JSON.stringify(brain, null, 2);
+    fs.writeFileSync(filepath, json, 'utf-8');
+  });
+  writeBuffer.clear();
 }
 
 /**
@@ -107,7 +132,7 @@ export function getOrCreateBrain(
 }
 
 /**
- * Save and persist a brain instance
+ * Save and persist a brain instance (uses buffered write)
  */
 export function persistBrain(
   brain: AdvancedAgentBrain,
@@ -115,6 +140,17 @@ export function persistBrain(
 ): void {
   brain.last_updated = getCurrentTimestamp();
   saveBrain(brain, brainDir);
+}
+
+/**
+ * Ensure all pending writes are flushed (call on process exit)
+ */
+export function ensureFlushed(): void {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  flushWriteBuffer();
 }
 
 /**
