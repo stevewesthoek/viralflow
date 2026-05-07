@@ -176,12 +176,51 @@ export function updateLearnedPatterns(brain: AdvancedAgentBrain): void {
 }
 
 /**
+ * Infer format preference from performance data
+ */
+function analyzeFormatPreference(brain: AdvancedAgentBrain): { prefers_longform: boolean | null; prefers_shortform: boolean | null } {
+  const metrics = brain.performance_history;
+
+  if (metrics.length === 0) {
+    return { prefers_longform: null, prefers_shortform: null };
+  }
+
+  // Group by format (assume format is tagged in metric, fallback to inferring from view_duration)
+  let longformDuration = 0;
+  let shortformDuration = 0;
+  let longformCount = 0;
+  let shortformCount = 0;
+
+  metrics.forEach((m) => {
+    const duration = m.view_duration || 0;
+    // Heuristic: if avg view duration > 5 min, likely longform; < 2 min likely shortform
+    if (duration > 300) {
+      longformDuration += duration;
+      longformCount++;
+    } else if (duration < 120) {
+      shortformDuration += duration;
+      shortformCount++;
+    }
+  });
+
+  const avgLongformDuration = longformCount > 0 ? longformDuration / longformCount : 0;
+  const avgShortformDuration = shortformCount > 0 ? shortformDuration / shortformCount : 0;
+
+  // Infer preferences from actual data
+  const prefers_longform = longformCount > 0 && avgLongformDuration > avgShortformDuration ? true : longformCount === 0 && shortformCount === 0 ? null : false;
+  const prefers_shortform = shortformCount > 0 && avgShortformDuration > avgLongformDuration ? true : longformCount === 0 && shortformCount === 0 ? null : false;
+
+  return { prefers_longform, prefers_shortform };
+}
+
+/**
  * Generate learning insights from brain state
  */
 export function getLearnedInsights(brain: AdvancedAgentBrain): LearnedInsights {
   const patterns = rankHookPatterns(brain);
   const platforms = analyzeplatformPerformance(brain);
   const preferences = inferAudiencePreferences(brain);
+  const { prefers_longform, prefers_shortform } = analyzeFormatPreference(brain);
 
   // Infer content format preference
   const engagementTrend = (preferences.engagement_trend as string) || 'stable';
@@ -202,12 +241,18 @@ export function getLearnedInsights(brain: AdvancedAgentBrain): LearnedInsights {
     recommendations.push('Engagement is declining - consider testing new angles or platforms');
   }
 
+  if (prefers_longform) {
+    recommendations.push('Your audience shows strong preference for longer-form content');
+  } else if (prefers_shortform) {
+    recommendations.push('Your audience shows strong preference for shorter-form content');
+  }
+
   return {
     best_patterns: patterns,
     best_platforms: platforms,
     audience_profile: {
-      prefers_longform: Math.random() > 0.5, // Placeholder
-      prefers_shortform: Math.random() > 0.5, // Placeholder
+      prefers_longform,
+      prefers_shortform,
       platform_tendency: (preferences.top_platform as string) || 'unknown',
       engagement_trend: engagementTrend as 'increasing' | 'stable' | 'decreasing',
     },

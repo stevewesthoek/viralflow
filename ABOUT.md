@@ -92,7 +92,7 @@ Started as internal infrastructure. Worked so well that we're open-sourcing it.
 - **TypeScript** (strict mode) — Type safety for production reliability
 - **Jest** — 107 passing tests, 80%+ coverage
 - **Node.js 18+** — Modern, stable runtime
-- **Zero dependencies (core)** — Fast, lightweight, bring your own APIs
+- **Minimal dependencies** — `axios` (HTTP), `dotenv` (config), `joi` (validation), `winston` (logging). Zero cloud service dependencies — runs fully local.
 - **Extensible architecture** — Plugin system for custom sources/hooks/scripts
 
 We deliberately avoided:

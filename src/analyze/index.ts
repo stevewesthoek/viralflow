@@ -88,10 +88,35 @@ function updateLearnedPatterns(agentBrain: AgentBrain): void {
   const history = agentBrain.performance_history;
   if (history.length < 3) return;
 
+  // Compute best_engagement_time from recorded timestamps
+  const hourlyEngagement: Record<number, number> = {};
+  history.forEach((m) => {
+    const date = new Date(m.recorded_at);
+    const hour = date.getHours();
+    hourlyEngagement[hour] = (hourlyEngagement[hour] || 0) + m.engagement_rate;
+  });
+
+  let bestHour = 0;
+  let maxEngagement = 0;
+  Object.entries(hourlyEngagement).forEach(([hour, engagement]) => {
+    if (engagement > maxEngagement) {
+      maxEngagement = engagement;
+      bestHour = parseInt(hour, 10);
+    }
+  });
+
+  const bestEngagementTime = bestHour >= 17 ? 'evening' : bestHour >= 12 ? 'afternoon' : 'morning';
+
+  // Compute average_view_duration from recorded metrics
+  const viewDurations = history.map((m) => m.view_duration || 0).filter((d) => d > 0);
+  const averageViewDuration = viewDurations.length > 0
+    ? (viewDurations.reduce((sum, d) => sum + d, 0) / viewDurations.length / 60).toFixed(1) + ' min'
+    : null;
+
   agentBrain.learned_patterns.audience_preferences = {
     prefers_long_form: history.filter((m) => m.views > 10000).length > 0,
     prefers_short_form: history.filter((m) => m.platform === 'tiktok').length > 0,
-    best_engagement_time: 'evening',
-    average_view_duration: '45%',
+    best_engagement_time: bestEngagementTime,
+    average_view_duration: averageViewDuration || 'unknown',
   };
 }

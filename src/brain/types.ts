@@ -66,8 +66,8 @@ export interface LearnedInsights {
   best_patterns: LearnedHookPattern[];
   best_platforms: PlatformPerformance[];
   audience_profile: {
-    prefers_longform: boolean;
-    prefers_shortform: boolean;
+    prefers_longform: boolean | null;
+    prefers_shortform: boolean | null;
     platform_tendency: string; // Most used platform
     engagement_trend: 'increasing' | 'stable' | 'decreasing';
   };

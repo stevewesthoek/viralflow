@@ -50,6 +50,7 @@ export interface PerformanceMetric {
   click_through_rate?: number;
   conversion_rate?: number;
   hook_performance?: number;
+  view_duration?: number;
   recorded_at: string;
 }
 
