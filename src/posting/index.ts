@@ -1,6 +1,8 @@
 import { PostingBatch, PostMetadata, UploadOptions, UploadResult, PlatformAdapter } from './types';
 import { generateId, getCurrentTimestamp } from '../utils';
 import { AccountManager } from '../accounts';
+import { YouTubeAdapter } from './adapters/youtube';
+import { TikTokAdapter } from './adapters/tiktok';
 
 /**
  * Posting orchestrator - routes videos to multiple platforms
@@ -13,6 +15,29 @@ export class PostingOrchestrator {
 
   constructor(accountManager: AccountManager) {
     this.accountManager = accountManager;
+    this.registerDefaultAdapters();
+  }
+
+  private registerDefaultAdapters(): void {
+    // Register YouTube adapter if credentials are present
+    if (
+      process.env.YOUTUBE_OAUTH_CLIENT_ID &&
+      process.env.YOUTUBE_OAUTH_CLIENT_SECRET &&
+      process.env.YOUTUBE_OAUTH_REDIRECT_URI
+    ) {
+      const youtubeAdapter = new YouTubeAdapter(
+        process.env.YOUTUBE_OAUTH_CLIENT_ID,
+        process.env.YOUTUBE_OAUTH_CLIENT_SECRET,
+        process.env.YOUTUBE_OAUTH_REDIRECT_URI
+      );
+      this.registerAdapter('youtube', youtubeAdapter);
+    }
+
+    // Register TikTok adapter if credentials are present
+    if (process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET) {
+      const tiktokAdapter = new TikTokAdapter(process.env.TIKTOK_CLIENT_KEY, process.env.TIKTOK_CLIENT_SECRET);
+      this.registerAdapter('tiktok', tiktokAdapter);
+    }
   }
 
   /**

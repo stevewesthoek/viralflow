@@ -177,8 +177,8 @@ async function cmdAngles(args: string[], outputJson: boolean): Promise<void> {
       logError('Topic is required. Usage: viral-flow angles "<topic>" [--format youtube,tiktok] [--count 15]');
     }
 
-    const formatStr = getFlagValue(args, '--format') || 'youtube,tiktok,linkedin';
-    const formats = formatStr.split(',') as any[];
+    const formatStr = getFlagValue(args, '--format') || 'longform,shortform,linkedin';
+    const formats = formatStr.split(',') as ('longform' | 'shortform' | 'linkedin')[];
     const countStr = getFlagValue(args, '--count') || '15';
     const count = parseInt(countStr, 10);
 
@@ -388,7 +388,7 @@ async function cmdAccounts(args: string[], outputJson: boolean): Promise<void> {
       const allAccounts: unknown[] = [];
 
       platforms.forEach((p) => {
-        const platformAccounts = manager.getAccountsByPlatform(p as any);
+        const platformAccounts = manager.getAccountsByPlatform(p as 'youtube' | 'tiktok' | 'instagram' | 'linkedin' | 'facebook');
         allAccounts.push(...platformAccounts);
       });
 
@@ -399,8 +399,9 @@ async function cmdAccounts(args: string[], outputJson: boolean): Promise<void> {
         if (allAccounts.length === 0) {
           log('No accounts configured. Use: viral-flow accounts add --platform <name> --name "..."');
         } else {
-          allAccounts.forEach((account: any, index: number) => {
-            log(`${index + 1}. ${account.account_name} (${account.platform})`);
+          allAccounts.forEach((account: unknown, index: number) => {
+            const acc = account as { account_name: string; platform: string };
+            log(`${index + 1}. ${acc.account_name} (${acc.platform})`);
           });
         }
         log('');
@@ -414,7 +415,7 @@ async function cmdAccounts(args: string[], outputJson: boolean): Promise<void> {
       }
 
       const handle = getFlagValue(args, '--handle') || name || '';
-      manager.addAccount(name || '', platform as any, handle, {});
+      manager.addAccount(name || '', platform as 'youtube' | 'tiktok' | 'instagram' | 'linkedin' | 'facebook', handle, {});
 
       if (outputJson) {
         logJson({ status: 'added', platform, account_name: name });
