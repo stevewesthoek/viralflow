@@ -2,6 +2,8 @@ import { Topic, DiscoverOptions } from '../types';
 import { DiscoverSource } from './types';
 import { YouTubeSource } from './youtube';
 import { RedditSource } from './reddit';
+import { TwitterSource } from './twitter';
+import { TikTokTrendsSource } from './tiktok-trends';
 import { CustomSource } from './custom';
 
 // Discovery source registry: extensible architecture for custom sources
@@ -9,6 +11,8 @@ import { CustomSource } from './custom';
 const sources: Record<string, DiscoverSource> = {
   youtube: new YouTubeSource(),
   reddit: new RedditSource(),
+  twitter: new TwitterSource(),
+  'tiktok-trends': new TikTokTrendsSource(),
   custom: new CustomSource(),
 };
 
@@ -163,4 +167,4 @@ function calculateIcpRelevance(topic: Topic, icpFilter: string): number {
   return (matches / keywords.length) * 100;
 }
 
-export { DiscoverSource, YouTubeSource, RedditSource, CustomSource };
+export { DiscoverSource, YouTubeSource, RedditSource, TwitterSource, TikTokTrendsSource, CustomSource };
