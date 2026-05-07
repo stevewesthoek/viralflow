@@ -1,0 +1,31 @@
+# Source and tests excluded from npm tarball
+src/
+tests/
+coverage/
+.github/
+*.test.ts
+*.test.js
+dist/**/*.test.js
+dist/**/*.test.d.ts
+
+# Build and dev artifacts
+tsconfig.json
+jest.config.js
+eslint.config.js
+.eslintignore
+.prettierrc
+
+# Docs excluded
+IMPLEMENTATION_PLAN.md
+LAUNCH.md
+CONTRIBUTORS.md
+COMMUNITY.md
+decision-log.md
+
+# Development
+.env
+.env.local
+node_modules/
+
+# CI/CD
+.github/
